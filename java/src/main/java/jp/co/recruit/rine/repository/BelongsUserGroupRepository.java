@@ -10,7 +10,11 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Repository
 public class BelongsUserGroupRepository {
@@ -34,6 +38,21 @@ public class BelongsUserGroupRepository {
         SqlParameterSource source = new MapSqlParameterSource().addValue("groupId", group.getId());
         String sql = "SELECT COUNT(*) as cnt FROM belongs_user_group WHERE group_id = :groupId";
         return jdbcTemplate.queryForObject(sql, source, Integer.class);
+    }
+
+    public Map<Integer, Long> countUsersByGroups(Collection<BelongsUserGroup> groups) {
+        if (groups.isEmpty()) {
+            return new HashMap<>();
+        }
+        SqlParameterSource source = new MapSqlParameterSource().addValue("groupIds", groups.stream().map(BelongsUserGroup::getGroupId).collect(Collectors.toList()));
+        String sql = "SELECT * FROM belongs_user_group WHERE group_id in :groupIds";
+        List<BelongsUserGroup> belongsUserGroups = jdbcTemplate.query(sql, source, rowMapper);
+        return belongsUserGroups.stream().collect(Collectors.groupingBy(BelongsUserGroup::getGroupId, Collectors.counting()));
+    }
+
+    public void a() {
+        String sql = "SELECT *,  as cnt FROM group WHERE group_id in :groupIds";
+
     }
 
     public boolean isBelonging(Group group, User user) {
