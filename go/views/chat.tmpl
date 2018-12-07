@@ -1,0 +1,38 @@
+{{define "title"}}.group.name{{end}}
+{{template "header.tmpl" .}}
+
+<div class="row">
+<main class="col-12">
+  <div id="chat-list">
+    {{$dot := .}}
+    {{range $idx, $chat := .chats}}
+      <div class="chat-box" id="chat-{{$chat.ID}}">
+        {{if ne $chat.CommentUser.Username $dot.user.Username}}
+          <div class="chat-face">
+            <img src="/images/{{$chat.CommentUser.Icon}}" width=90 height=90 />
+            <div class="chat-username">{{$chat.CommentUser.Username}}</div>
+          </div>
+        {{end}}
+        <div class="chat-area">
+          {{if ne $chat.CommentUser.Username $dot.user.Username}}
+            <div class="chat-comment other-chat">
+          {{else}}
+            <div class="chat-comment my-chat">
+          {{end}}
+            {{$chat.Comment}}
+          </div>
+          <span class="chat-read-count">
+            <span>既読: <span>{{$chat.Count}}</span></span>
+          </span>
+        </div>
+      </div>
+    {{end}}
+  </div>
+  <form method="POST" id="chat-form" class="form-inline">
+    <input type="text" name="value" class="form-control col-5 chat-form" />
+    <button value="送信" class="btn btn-primary">送信</button>
+  </form>
+</main>
+</div>
+
+{{template "footer.tmpl"}}

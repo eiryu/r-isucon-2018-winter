@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<div th:replace="header::header('グループ')"></div>
+<h4>新規作成・更新</h4>
+<form method="POST" class="form-inline">
+    <input type="text" class="form-control col-3" name="groupname" id="groupname" placeholder="グループ名">
+    <input type="textarea" class="form-control col-5" name="usernames" id="usernames" placeholder="招待ユーザ (カンマ区切り)">
+    <button type="submit" class="btn btn-primary">登録</button>
+</form>
+<p></p>
+<h4>一覧</h4>
+<div class="list-group">
+    <a class="list-group-item list-group-item-action" th:each="group : ${groups}" th:href="|/groups/${group.owner}/${group.name}|">
+        <th:block th:text="|#${group.name} by ${group.owner} (${group.userCount})|"></th:block>
+        <span class="badge badge-primary badge-pill" th:text="${group.chatCount}"></span>
+    </a>
+</div>
+<div th:replace="footer"></div>
+</html>

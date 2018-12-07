@@ -1,0 +1,34 @@
+#set("title") { #(group.name) }
+
+#set("body") {
+  <div class="row">
+    <main class="col-12">
+      <div id="chat-list">
+        #for(chat in chats) {
+          <div class="chat-box" id="chat-#(chat.id)">
+            #if(chat.commentUser.username != user.username) {
+              <div class="chat-face">
+                <img src="/images/#(chat.commentUser.icon)" width=90 height=90 />
+                <div class="chat-username">#(chat.commentUser.username)</div>
+              </div>
+            }
+            <div class="chat-area">
+              <div class="chat-comment #(chat.commentUser.username == user.username ? "my" : "other")-chat">
+                #(chat.comment)
+              </div>
+              <span class="chat-read-count">
+                <span>既読: <span>#(chat.count)</span></span>
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+      <form method="POST" id="chat-form" class="form-inline">
+        <input type="text" name="value" class="form-control col-5 chat-form" />
+        <button value="送信" class="btn btn-primary">送信</button>
+      </form>
+    </main>
+  </div>
+}
+
+#embed("base")

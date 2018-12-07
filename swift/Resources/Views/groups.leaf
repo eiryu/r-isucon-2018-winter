@@ -1,0 +1,22 @@
+#set("title") { グループ }
+
+#set("body") {
+  <h4>新規作成・更新</h4>
+  <form method="POST" class="form-inline">
+    <input type="text" class="form-control col-3" name="groupname" id="groupname" placeholder="グループ名">
+    <input type="textarea" class="form-control col-5" name="usernames" id="usernames" placeholder="招待ユーザ (カンマ区切り)">
+    <button type="submit" class="btn btn-primary">登録</button>
+  </form>
+  <p>
+  <h4>一覧</h4>
+  <div class="list-group">
+    #for(group in groups) {
+      <a href="/groups/#(group.owner)/#(group.name)" class="list-group-item list-group-item-action">
+        ##(group.name) by #get(group.owner) (#(group.userCount))
+        <span class="badge badge-primary badge-pill">#(group.chatCount)</span>
+      </a>
+    }
+  </div>
+}
+
+#embed("base")

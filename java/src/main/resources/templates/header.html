@@ -1,0 +1,49 @@
+<th:block th:fragment="header(title)">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <link rel='stylesheet' href='/css/bootstrap.css' />
+        <link rel='stylesheet' href='/css/chat.css' />
+        <link rel='stylesheet' href='/css/groups.css' />
+        <script src='/js/jquery-3.3.1.js'></script>
+        <script src='/js/bootstrap.bundle.js'></script>
+        <script src='/js/chat.js' async></script>
+        <title th:text="${title}"></title>
+    </head>
+
+    <body>
+    <div class="nav navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">RINE</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <th:block th:if="${session.user}">
+                    <li class="nav-item"><a class="nav-link" href="/groups">グループ一覧</a></li>
+                    <li class="nav-item">
+                        <form class="form-inline" name="logout" action="/logout" method="POST">
+                            <a class="nav-link" href="#" onclick="return confirm('本当にログアウトしますか？') && logout.submit()">ログアウト</a>
+                        </form>
+                    </li>
+                </th:block>
+                <th:block th:unless="${session.user}">
+                    <li class="nav-item"><a class="nav-link" href="/register">新規ユーザー登録</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/login">ログイン</a></li>
+                </th:block>
+            </ul>
+            <th:block th:if="${session.user}">
+                <ul class="navbar-nav ml-auto">
+                    <img th:src="|/images/${session.user.icon}|" class="img-rounded" height=40 />
+                    <li class="nav-item navbar-text" th:text="|${session.user.lastname} ${session.user.firstname} さん|"></li>
+                    <input type="hidden" id="_username" th:value="${session.user.username}" />
+                </ul>
+            </th:block>
+        </div>
+    </div>
+    <div class="container">
+        <div class="alert alert-warning alert-dismissible fade show" role="alert" th:if="${message}">
+            <th:block th:text="${message}"></th:block>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+</th:block>
