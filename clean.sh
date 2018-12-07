@@ -6,9 +6,7 @@ if [ -f /var/lib/mysql/mysqld-slow.log ]; then
 fi
 if [ -f /var/log/nginx/access_log.ltsv ]; then
     sudo mv /var/log/nginx/access_log.ltsv /var/log/nginx/access_log.ltsv.$(date "+%Y%m%d_%H%M%S")
-    sudo touch /var/log/nginx/access_log.ltsv
-    sudo chown www-data:www-data /var/log/nginx/access_log.ltsv
 fi
-sudo systemctl restart mysql
+#sudo systemctl restart mysql
 sudo systemctl restart nginx
 sudo systemctl restart r-isucon-node

@@ -8,3 +8,4 @@ PASSWORD=${RISUCON_DB_PASSWORD:-isucon}
 cd `dirname $0`
 mysql -h $HOST --port $PORT -u $USERNAME -p$PASSWORD < ./01_table.sql
 mysql -h $HOST --port $PORT -u $USERNAME -p$PASSWORD rine < ./02_data.sql
+mysql -h $HOST --port $PORT -u $USERNAME -p$PASSWORD rine < ./03_fix.sql
