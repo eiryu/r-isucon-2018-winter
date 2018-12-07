@@ -4,6 +4,11 @@ spring:
     url: jdbc:mysql://${RISUCON_DB_HOST:localhost}:${RISUCON_DB_PORT:3306}/${RISUCON_DB_NAME:rine}?characterEncoding=UTF-8
     username: ${RISUCON_DB_USER:isucon}
     password: ${RISUCON_DB_PASSWORD:isucon}
+  session:
+    store-type: redis
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
 server:
   port: 3000
 server.servlet.session.cookie:

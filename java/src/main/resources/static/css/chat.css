@@ -1,0 +1,77 @@
+.container {
+  padding-top: 30px;
+  padding-bottom: 30px;
+}
+
+.chat-box {
+    width: 100%;
+    height: auto;
+    overflow: hidden; /*floatの解除*/
+    margin-bottom: 20px;
+}
+.chat-face {
+    float: left;
+    margin-right: -120px;
+}
+.chat-face img {
+    border-radius: 30px;
+    border: 1px solid #ccc;
+    box-shadow: 0 0 4px #ddd;
+}
+.chat-username {
+    text-align: center;
+}
+.chat-area {
+    position: relative;
+    width: 100%;
+    float: right;
+}
+.chat-comment {
+    display: inline-block; /*コメントの文字数に合わせて可変*/
+    padding: 15px 20px;
+    margin-right: 10px;
+    margin-top: 8px;
+    /* border: 1px solid gray; ←削除 */
+    border-radius: 10px;
+    position: relative; /*追記*/
+}
+.chat-comment:after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    margin-top: -10px;
+    display: block;
+    width: 0px;
+    height: 0px;
+    border-style: solid;
+}
+.my-chat {
+    margin-left: 65px;
+    float: right;
+    background-color: #A9F5A9;
+}
+.my-chat:after {
+    right: -20px;
+    border-width: 10px;
+    border-color: transparent transparent transparent #A9F5A9;
+}
+.other-chat {
+    margin-left: 120px;
+    background-color: #D9F0FF;
+}
+.other-chat:after {
+    left: -20px;
+    border-width: 10px;
+    border-color: transparent #D9F0FF transparent transparent;
+}
+.chat-read-count > span {
+    position: absolute;
+    bottom: 0;
+}
+.my-chat + .chat-read-count {
+    float: right;
+}
+.chat-form {
+    border-style: solid;
+    border-color: black;
+}
