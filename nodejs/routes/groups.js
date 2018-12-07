@@ -5,15 +5,17 @@ const { validateGroupname } = require("../utils/validator");
 const getGroups = async (user) => {
   const { query } = require("./misc");
   const q = query();
-  const gs = await q("SELECT * FROM belongs_user_group WHERE username = ? ORDER BY group_id", [user.username]);
+
+  // N+1 解消。
+  const gs = await q("SELECT g.id, g.owner, g.name FROM belongs_user_group bug LEFT JOIN groups g ON g.id = bug.group_id WHERE bug.username = ? ORDER BY bug.group_id", [user.username]);
   const groups = [];
   for (const g of gs) {
-    const [group] = await q("SELECT * FROM groups WHERE id = ?", [g.group_id]);
-    const [userCount] = await q("SELECT COUNT(*) as cnt FROM belongs_user_group WHERE group_id = ?", [g.group_id]);
-    const [chatCount] = await q("SELECT COUNT(*) as cnt FROM belongs_chat_group WHERE group_id = ?", [g.group_id]);
-    group.userCount = userCount.cnt;
-    group.chatCount = chatCount.cnt;
-    groups.push(group);
+    // このクエリもなんとかしたい...
+    const [userCount] = await q("SELECT COUNT(*) as cnt FROM belongs_user_group WHERE group_id = ?", [g.id]);
+    const [chatCount] = await q("SELECT COUNT(*) as cnt FROM belongs_chat_group WHERE group_id = ?", [g.id]);
+    g.userCount = userCount.cnt;
+    g.chatCount = chatCount.cnt;
+    groups.push(g);
   }
   return groups;
 }
@@ -92,6 +94,7 @@ router.get("/:owner/:groupname", async (req, res, next) => {
       return res.render("chat", {message: "not found group", chats: [], user, group: {name: ""}});
     }
 
+    // LIMIT 1 追加。
     const [belongs] = await query("SELECT * FROM belongs_user_group WHERE group_id = ? AND username = ? LIMIT 1", [group.id, user.username]);
     if (!belongs) {
       res.status(404);
@@ -99,6 +102,7 @@ router.get("/:owner/:groupname", async (req, res, next) => {
       return res.render("chat", {message: "not found group", chats: [], user,  group: {name: ""}});
     }
 
+    // クエリを1回削減。
     const cs = await query("SELECT c.id, c.comment, c.comment_by FROM belongs_chat_group bcg LEFT JOIN chat c ON c.id = bcg.chat_id WHERE bcg.group_id = ? ORDER BY c.id, c.comment_at DESC LIMIT 100", [group.id]);
     if (cs.length === 0) {
       await connection.commit();
@@ -107,21 +111,21 @@ router.get("/:owner/:groupname", async (req, res, next) => {
 
     const chats = [];
     for (const c of cs) {
-      // N + 1 に戻した
+      // メモリ問題解消のため、内側に戻した。
       const [commentUser] = await query(`SELECT username, icon FROM user WHERE username = ?`, [c.comment_by])
 
       // この INSERT をどうするかは悩む...
       await query("INSERT INTO read_chat (chat_id, username) VALUES (?, ?) ON DUPLICATE KEY UPDATE chat_id = ?, username = ?", [c.id, user.username, c.id, user.username])
 
-      // 2回実行する意味がない気がするので外側で1回実行する。
-      const [cnt] = await query("SELECT COUNT(*) as cnt FROM read_chat WHERE chat_id = ?", [c.id])
       try {
         const { app } = require("../app");
         const wss = app.get("wss");
+        const [cnt] = await query("SELECT COUNT(*) as cnt FROM read_chat WHERE chat_id = ?", [c.id])
         wss.broadcast(JSON.stringify({ eventName: "read", id: c.id, username: user.username, count: cnt.cnt}));
       } catch (e) {
         // ignore
       }
+      const [cnt] = await query("SELECT COUNT(*) as cnt FROM read_chat WHERE chat_id = ?", [c.id])
       chats.push({...c, commentUser, count: cnt.cnt})
     }
     await connection.commit();
