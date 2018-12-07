@@ -73,6 +73,7 @@ router.post("/", async (req, res, next) => {
   }
 });
 
+// TODO: ボトルネックになっているエンドポイント。チューニングしたい。
 router.get("/:owner/:groupname", async (req, res, next) => {
   const { connect } = require("./misc");
   const { query, connection } = await connect();
@@ -90,36 +91,37 @@ router.get("/:owner/:groupname", async (req, res, next) => {
       await connection.rollback();
       return res.render("chat", {message: "not found group", chats: [], user, group: {name: ""}});
     }
-    const [belongs] = await query("SELECT * FROM belongs_user_group WHERE group_id = ? AND username = ?", [group.id, user.username]);
+
+    const [belongs] = await query("SELECT * FROM belongs_user_group WHERE group_id = ? AND username = ? LIMIT 1", [group.id, user.username]);
     if (!belongs) {
       res.status(404);
       await connection.rollback();
       return res.render("chat", {message: "not found group", chats: [], user,  group: {name: ""}});
     }
-    const chatIds = await query("SELECT chat_id FROM belongs_chat_group WHERE group_id = ? ORDER BY chat_id DESC LIMIT 100", [group.id]);
 
-    if (chatIds.length === 0) {
+    const cs = await query("SELECT c.id, c.comment, c.comment_by FROM belongs_chat_group bcg LEFT JOIN chat c ON c.id = bcg.chat_id WHERE bcg.group_id = ? ORDER BY c.id, c.comment_at DESC LIMIT 100", [group.id]);
+    if (cs.length === 0) {
       await connection.commit();
       return res.render("chat", { group, chats: [], user });
     }
 
-    const placeHolders = chatIds.map((id) => "?").join(",");
-    const cids = chatIds.map((c) => c.chat_id);
-    const cs = await query(`SELECT * FROM chat WHERE id IN (${placeHolders}) ORDER BY comment_at`, [...cids])
     const chats = [];
     for (const c of cs) {
-      const [commentUser] = await query("SELECT * FROM user WHERE username = ?", [c.comment_by])
-      await query("INSERT INTO read_chat (chat_id, username) VALUES (?, ?) ON DUPLICATE KEY UPDATE chat_id = ?, username = ?",
-      [c.id, user.username, c.id, user.username])
+      // N + 1 に戻した
+      const [commentUser] = await query(`SELECT username, icon FROM user WHERE username = ?`, [c.comment_by])
+
+      // この INSERT をどうするかは悩む...
+      await query("INSERT INTO read_chat (chat_id, username) VALUES (?, ?) ON DUPLICATE KEY UPDATE chat_id = ?, username = ?", [c.id, user.username, c.id, user.username])
+
+      // 2回実行する意味がない気がするので外側で1回実行する。
+      const [cnt] = await query("SELECT COUNT(*) as cnt FROM read_chat WHERE chat_id = ?", [c.id])
       try {
-        const [cnt] = await query("SELECT COUNT(*) as cnt FROM read_chat WHERE chat_id = ?", [c.id])
         const { app } = require("../app");
         const wss = app.get("wss");
         wss.broadcast(JSON.stringify({ eventName: "read", id: c.id, username: user.username, count: cnt.cnt}));
       } catch (e) {
         // ignore
       }
-      const [cnt] = await query("SELECT COUNT(*) as cnt FROM read_chat WHERE chat_id = ?", [c.id])
       chats.push({...c, commentUser, count: cnt.cnt})
     }
     await connection.commit();
