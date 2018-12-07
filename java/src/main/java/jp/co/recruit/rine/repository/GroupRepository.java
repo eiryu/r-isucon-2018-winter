@@ -49,7 +49,7 @@ public class GroupRepository {
             return Collections.emptyList();
         }
         SqlParameterSource source = new MapSqlParameterSource().addValue("groupIds", groupIds);
-        String sql = "SELECT * FROM `groups` WHERE id in :groupId";
+        String sql = "SELECT * FROM `groups` WHERE id in (:groupIds)";
         return jdbcTemplate.query(sql, source, rowMapper);
     }
 

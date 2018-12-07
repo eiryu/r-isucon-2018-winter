@@ -45,7 +45,7 @@ public class BelongsUserGroupRepository {
             return new HashMap<>();
         }
         SqlParameterSource source = new MapSqlParameterSource().addValue("groupIds", groups.stream().map(BelongsUserGroup::getGroupId).collect(Collectors.toList()));
-        String sql = "SELECT * FROM belongs_user_group WHERE group_id in :groupIds";
+        String sql = "SELECT * FROM belongs_user_group WHERE group_id in (:groupIds)";
         List<BelongsUserGroup> belongsUserGroups = jdbcTemplate.query(sql, source, rowMapper);
         return belongsUserGroups.stream().collect(Collectors.groupingBy(BelongsUserGroup::getGroupId, Collectors.counting()));
     }

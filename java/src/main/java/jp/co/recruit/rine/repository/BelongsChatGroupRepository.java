@@ -47,7 +47,7 @@ public class BelongsChatGroupRepository {
             return new HashMap<>();
         }
         SqlParameterSource source = new MapSqlParameterSource().addValue("groupIds", groups.stream().map(BelongsUserGroup::getGroupId).collect(Collectors.toList()));
-        String sql = "SELECT * FROM belongs_chat_group WHERE group_id in :groupIds";
+        String sql = "SELECT * FROM belongs_chat_group WHERE group_id in (:groupIds)";
         List<BelongsChatGroup> belongsChatGroups = jdbcTemplate.query(sql, source, rowMapper);
         return belongsChatGroups.stream().collect(Collectors.groupingBy(BelongsChatGroup::getGroupId, Collectors.counting()));
     }
