@@ -52,3 +52,7 @@ CREATE TABLE `read_chat` (
   username varchar(40) NOT NULL,
   PRIMARY KEY (`chat_id`, `username`)
 );
+
+ALTER TABLE belongs_chat_group ADD INDEX belongs_chat_group_group_id_idx(group_id);
+ALTER TABLE belongs_user_group ADD INDEX belongs_user_group_username_idx(username);
+ALTER TABLE belongs_user_group ADD INDEX belongs_user_group_username_group_id_multi_idx(username, group_id);
