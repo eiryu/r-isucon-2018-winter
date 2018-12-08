@@ -78,9 +78,10 @@ public class ChatController {
             for(Chat chat: chatList) {
                 // n + 1だが、insertだからむつかしいか？
                 int affectedCount = readChatRepository.markRead(chat.getId(), userFromSession);
-                Long readCount = readCountByIds.get(chat.getId());
+                Long readCountTmp = readCountByIds.get(chat.getId());
+                long readCount = readCountTmp == null ? 0L : readCountTmp;
                 // insertが発生したら1、updateが発生したら2が返ってくる。1の場合は既読が増えていることになるので加算している
-                Long cnt = affectedCount == 1 ? readCount + 1 : readCount;
+                long cnt = affectedCount == 1 ? readCount + 1 : readCount;
                 try {
 
                     Map<String, Object> hash = new HashMap<>();
