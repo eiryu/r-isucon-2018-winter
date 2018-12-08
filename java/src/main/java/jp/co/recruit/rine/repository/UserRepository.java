@@ -9,6 +9,12 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 @Repository
 public class UserRepository {
     @Autowired
@@ -33,6 +39,13 @@ public class UserRepository {
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
+    }
+
+    public Map<String, User> findByUsernames(Collection<String> usernames) {
+        SqlParameterSource source = new MapSqlParameterSource().addValue("usernames", usernames);
+        String sql = "select * from user WHERE username in (:usernames)";
+        List<User> users = jdbcTemplate.query(sql, source, rowMapper);
+        return users.stream().collect(Collectors.toMap(User::getUsername, Function.identity()));
     }
 
     public int createUser(User user) {
