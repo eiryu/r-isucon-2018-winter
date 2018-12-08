@@ -5,8 +5,6 @@ import jp.co.recruit.rine.model.Chat;
 import jp.co.recruit.rine.model.Group;
 import jp.co.recruit.rine.model.User;
 import jp.co.recruit.rine.repository.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -18,6 +16,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpSession;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 public class ChatController {
@@ -68,15 +67,19 @@ public class ChatController {
 
         List<Chat> chats = new ArrayList<>();
 
+        Map<Integer, Long> readCountByIds = readChatRepository.getReadCountByIds(chatIds);
+
         TransactionStatus status = transactionManager.getTransaction(transactionDefinition);
         try {
             List<Chat> chatList = chatRepository.findChats(chatIds);
+            List<String> commentedUsers = chatList.stream().map(Chat::getCommentBy).collect(Collectors.toList());
+            Map<String, User> userMap = userRepository.findByUsernames(commentedUsers);
 
             for(Chat chat: chatList) {
-                User user = userRepository.findByUsername(chat.getCommentBy());
+                // n + 1だが、insertだからむつかしいか？
                 readChatRepository.markRead(chat.getId(), userFromSession);
+                Long cnt = readCountByIds.get(chat.getId());
                 try {
-                    Integer cnt = readChatRepository.getReadCount(chat.getId());
                     Map<String, Object> hash = new HashMap<>();
                     hash.put("eventName", "read");
                     hash.put("id", chat.getId());
@@ -86,8 +89,7 @@ public class ChatController {
                 } catch (Exception e) {
                     // ignore
                 }
-                Integer cnt = readChatRepository.getReadCount(chat.getId());
-                chat.setCommentUser(user);
+                chat.setCommentUser(userMap.get(chat.getCommentBy()));
                 chat.setCount(cnt);
                 chats.add(chat);
             }
