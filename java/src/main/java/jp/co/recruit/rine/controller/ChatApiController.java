@@ -62,7 +62,7 @@ public class ChatApiController {
             Map<String, String> parsed = gson.fromJson(body, new TypeToken<Map<String, String>>() {
             }.getType());
             comment = parsed.getOrDefault("value", "");
-        } catch (IllegalStateException e) {
+        } catch (Exception e) {
             String[] tokens = body.split("=");
             comment = URLDecoder.decode(tokens[1], "UTF-8");
         }
