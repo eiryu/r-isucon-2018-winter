@@ -1,4 +1,3 @@
-function f() {
 const chatForm = document.getElementById("chat-form");
 
 if (chatForm) {
@@ -90,6 +89,3 @@ if (chatForm) {
     chatCount.textContent = data.count;
   }
 }
-}
-
-document.addEventListener('DOMContentLoaded', f);
