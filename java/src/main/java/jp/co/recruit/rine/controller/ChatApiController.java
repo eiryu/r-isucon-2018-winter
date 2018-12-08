@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -55,8 +56,16 @@ public class ChatApiController {
         User user = (User) session.getAttribute("user");
         if (Objects.isNull(user)) throw new UnauthorizedError();
 
-        Map<String, String> parsed = gson.fromJson(body, new TypeToken<Map<String, String>>(){}.getType());
-        String comment = parsed.getOrDefault("value", "");
+        // chat.js がおかしいときに無理やりパースする。
+        String comment;
+        try {
+            Map<String, String> parsed = gson.fromJson(body, new TypeToken<Map<String, String>>() {
+            }.getType());
+            comment = parsed.getOrDefault("value", "");
+        } catch (IllegalStateException e) {
+            String[] tokens = body.split("=");
+            comment = URLDecoder.decode(tokens[1], "UTF-8");
+        }
 
         Group group = groupRepository.findByNameAndOwner(name, owner);
         if (Objects.isNull(group)) throw new GroupNotFoundError();
