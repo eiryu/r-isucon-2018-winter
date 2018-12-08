@@ -17,10 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpSession;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 public class GroupController {
@@ -56,7 +54,7 @@ public class GroupController {
 
     @RequestMapping(value = "/groups", method = RequestMethod.POST)
     public String createGroup(@RequestParam("groupname") String groupName,
-                              @RequestParam("usernames") String userNames) {
+                              @RequestParam("usernames") String usernamesParam) {
 
         User user = (User) session.getAttribute("user");
         if (Objects.isNull(user)) return "redirect:/login";
@@ -70,12 +68,19 @@ public class GroupController {
 
             List<String> usernames = new ArrayList<>();
             usernames.add(user.getUsername());
-            usernames.addAll(Arrays.asList(userNames.split(",")));
+            usernames.addAll(Arrays.stream(usernamesParam.split(",")).peek(String::trim).collect(Collectors.toList()));
+
+            Map<String, User> userMap = userRepository.findByUsernames(usernames);
+
             for (String username: usernames) {
                 String un = username.trim();
-                if (StringUtils.isEmpty(un)) continue;
-                User u = userRepository.findByUsername(un);
-                if (Objects.isNull(u)) throw new UserNotExistError();
+                if (StringUtils.isEmpty(un)) {
+                    continue;
+                }
+                User u = userMap.get(un);
+                if (Objects.isNull(u)) {
+                    throw new UserNotExistError();
+                }
                 groupRepository.addUserToGroup(groupId, u);
             }
         } catch (Exception e) {
