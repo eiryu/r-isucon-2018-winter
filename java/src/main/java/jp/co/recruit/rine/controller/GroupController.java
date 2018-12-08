@@ -56,7 +56,7 @@ public class GroupController {
 
     @RequestMapping(value = "/groups", method = RequestMethod.POST)
     public String createGroup(@RequestParam("groupname") String groupName,
-                              @RequestParam("usernames") String userNames) {
+                              @RequestParam("usernames") String usernamesParam) {
 
         User user = (User) session.getAttribute("user");
         if (Objects.isNull(user)) return "redirect:/login";
@@ -70,12 +70,16 @@ public class GroupController {
 
             List<String> usernames = new ArrayList<>();
             usernames.add(user.getUsername());
-            usernames.addAll(Arrays.asList(userNames.split(",")));
+            usernames.addAll(Arrays.asList(usernamesParam.split(",")));
             for (String username: usernames) {
                 String un = username.trim();
-                if (StringUtils.isEmpty(un)) continue;
+                if (StringUtils.isEmpty(un)) {
+                    continue;
+                }
                 User u = userRepository.findByUsername(un);
-                if (Objects.isNull(u)) throw new UserNotExistError();
+                if (Objects.isNull(u)) {
+                    throw new UserNotExistError();
+                }
                 groupRepository.addUserToGroup(groupId, u);
             }
         } catch (Exception e) {
