@@ -77,9 +77,10 @@ public class ChatController {
 
             for(Chat chat: chatList) {
                 // n + 1だが、insertだからむつかしいか？
-                readChatRepository.markRead(chat.getId(), userFromSession);
+                int affectedCount = readChatRepository.markRead(chat.getId(), userFromSession);
+                Long readCount = readCountByIds.get(chat.getId());
+                Long cnt = affectedCount == 1 ? readCount + 1 : readCount;
                 try {
-                    Long cnt = readCountByIds.get(chat.getId());
 
                     Map<String, Object> hash = new HashMap<>();
                     hash.put("eventName", "read");
@@ -90,7 +91,6 @@ public class ChatController {
                 } catch (Exception e) {
                     // ignore
                 }
-                Long cnt = readCountByIds.get(chat.getId());
                 chat.setCommentUser(userMap.get(chat.getCommentBy()));
                 chat.setCount(cnt);
                 chats.add(chat);
