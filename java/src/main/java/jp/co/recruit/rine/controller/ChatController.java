@@ -5,8 +5,6 @@ import jp.co.recruit.rine.model.Chat;
 import jp.co.recruit.rine.model.Group;
 import jp.co.recruit.rine.model.User;
 import jp.co.recruit.rine.repository.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -18,6 +16,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpSession;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 public class ChatController {
@@ -46,13 +45,19 @@ public class ChatController {
     @RequestMapping(value = "/groups/{owner}/{name}", method = RequestMethod.GET)
     public ModelAndView show(@PathVariable("owner") String owner,
                              @PathVariable("name") String name) {
-        User user = (User) session.getAttribute("user");
-        if (Objects.isNull(user)) return new ModelAndView("redirect:/login");
+        User userFromSession = (User) session.getAttribute("user");
+        if (Objects.isNull(userFromSession)) {
+            return new ModelAndView("redirect:/login");
+        }
 
         Group group = groupRepository.findByNameAndOwner(name, owner);
-        if (Objects.isNull(group)) throw new GroupNotFoundError();
+        if (Objects.isNull(group)) {
+            throw new GroupNotFoundError();
+        }
         List<Integer> chatIds = belongsChatGroupRepository.getChatIdList(group);
-        if (!belongsUserGroupRepository.isBelonging(group, user)) throw new GroupNotFoundError();
+        if (!belongsUserGroupRepository.isBelonging(group, userFromSession)) {
+            throw new GroupNotFoundError();
+        }
 
         if (chatIds.isEmpty()) {
             return new ModelAndView("chat")
@@ -62,28 +67,34 @@ public class ChatController {
 
         List<Chat> chats = new ArrayList<>();
 
+        Map<Integer, Long> readCountByIds = readChatRepository.getReadCountByIds(chatIds);
+
         TransactionStatus status = transactionManager.getTransaction(transactionDefinition);
         try {
             List<Chat> chatList = chatRepository.findChats(chatIds);
+            List<String> commentedUsers = chatList.stream().map(Chat::getCommentBy).collect(Collectors.toList());
+            Map<String, User> userMap = userRepository.findByUsernames(commentedUsers);
 
-            for(Chat c: chatList) {
-                User u = userRepository.findByUsername(c.getCommentBy());
-                readChatRepository.markRead(c.getId(), user);
+            for(Chat chat: chatList) {
+                // n + 1だが、insertだからむつかしいか？
+                int affectedCount = readChatRepository.markRead(chat.getId(), userFromSession);
+                Long readCount = readCountByIds.get(chat.getId());
+                // insertが発生したら1、updateが発生したら2が返ってくる。1の場合は既読が増えていることになるので加算している
+                Long cnt = affectedCount == 1 ? readCount + 1 : readCount;
                 try {
-                    Integer cnt = readChatRepository.getReadCount(c.getId());
+
                     Map<String, Object> hash = new HashMap<>();
                     hash.put("eventName", "read");
-                    hash.put("id", c.getId());
-                    hash.put("username", user.getUsername());
+                    hash.put("id", chat.getId());
+                    hash.put("username", userFromSession.getUsername());
                     hash.put("count", cnt);
                     chatHandler.broadcast(hash);
                 } catch (Exception e) {
                     // ignore
                 }
-                Integer cnt = readChatRepository.getReadCount(c.getId());
-                c.setCommentUser(u);
-                c.setCount(cnt);
-                chats.add(c);
+                chat.setCommentUser(userMap.get(chat.getCommentBy()));
+                chat.setCount(cnt);
+                chats.add(chat);
             }
         } catch (Exception e) {
             transactionManager.rollback(status);

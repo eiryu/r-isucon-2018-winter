@@ -1,6 +1,5 @@
 package jp.co.recruit.rine.model;
 
-import java.sql.Time;
 import java.sql.Timestamp;
 
 public class Chat {
@@ -9,7 +8,7 @@ public class Chat {
     private String commentBy;
     private Timestamp commentAt;
     private User commentUser;
-    private Integer count;
+    private Long count;
 
     public Integer getId() {
         return id;
@@ -51,11 +50,11 @@ public class Chat {
         this.commentUser = commentUser;
     }
 
-    public Integer getCount() {
+    public Long getCount() {
         return count;
     }
 
-    public void setCount(Integer count) {
+    public void setCount(Long count) {
         this.count = count;
     }
 
