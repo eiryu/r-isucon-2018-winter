@@ -46,13 +46,19 @@ public class ChatController {
     @RequestMapping(value = "/groups/{owner}/{name}", method = RequestMethod.GET)
     public ModelAndView show(@PathVariable("owner") String owner,
                              @PathVariable("name") String name) {
-        User user = (User) session.getAttribute("user");
-        if (Objects.isNull(user)) return new ModelAndView("redirect:/login");
+        User userFromSession = (User) session.getAttribute("user");
+        if (Objects.isNull(userFromSession)) {
+            return new ModelAndView("redirect:/login");
+        }
 
         Group group = groupRepository.findByNameAndOwner(name, owner);
-        if (Objects.isNull(group)) throw new GroupNotFoundError();
+        if (Objects.isNull(group)) {
+            throw new GroupNotFoundError();
+        }
         List<Integer> chatIds = belongsChatGroupRepository.getChatIdList(group);
-        if (!belongsUserGroupRepository.isBelonging(group, user)) throw new GroupNotFoundError();
+        if (!belongsUserGroupRepository.isBelonging(group, userFromSession)) {
+            throw new GroupNotFoundError();
+        }
 
         if (chatIds.isEmpty()) {
             return new ModelAndView("chat")
@@ -66,24 +72,24 @@ public class ChatController {
         try {
             List<Chat> chatList = chatRepository.findChats(chatIds);
 
-            for(Chat c: chatList) {
-                User u = userRepository.findByUsername(c.getCommentBy());
-                readChatRepository.markRead(c.getId(), user);
+            for(Chat chat: chatList) {
+                User user = userRepository.findByUsername(chat.getCommentBy());
+                readChatRepository.markRead(chat.getId(), userFromSession);
                 try {
-                    Integer cnt = readChatRepository.getReadCount(c.getId());
+                    Integer cnt = readChatRepository.getReadCount(chat.getId());
                     Map<String, Object> hash = new HashMap<>();
                     hash.put("eventName", "read");
-                    hash.put("id", c.getId());
-                    hash.put("username", user.getUsername());
+                    hash.put("id", chat.getId());
+                    hash.put("username", userFromSession.getUsername());
                     hash.put("count", cnt);
                     chatHandler.broadcast(hash);
                 } catch (Exception e) {
                     // ignore
                 }
-                Integer cnt = readChatRepository.getReadCount(c.getId());
-                c.setCommentUser(u);
-                c.setCount(cnt);
-                chats.add(c);
+                Integer cnt = readChatRepository.getReadCount(chat.getId());
+                chat.setCommentUser(user);
+                chat.setCount(cnt);
+                chats.add(chat);
             }
         } catch (Exception e) {
             transactionManager.rollback(status);
