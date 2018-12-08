@@ -4,8 +4,19 @@ public class Group {
     private Integer id;
     private String name;
     private String owner;
-    private Integer userCount;
-    private Integer chatCount;
+    private Long userCount;
+    private Long chatCount;
+
+    public Group() {
+    }
+
+    public Group(Integer id, String name, String owner, Long userCount, Long chatCount) {
+        this.id = id;
+        this.name = name;
+        this.owner = owner;
+        this.userCount = userCount;
+        this.chatCount = chatCount;
+    }
 
     public Integer getId() {
         return id;
@@ -31,19 +42,19 @@ public class Group {
         this.owner = owner;
     }
 
-    public Integer getUserCount() {
+    public Long getUserCount() {
         return userCount;
     }
 
-    public void setUserCount(Integer userCount) {
+    public void setUserCount(Long userCount) {
         this.userCount = userCount;
     }
 
-    public Integer getChatCount() {
+    public Long getChatCount() {
         return chatCount;
     }
 
-    public void setChatCount(Integer chatCount) {
+    public void setChatCount(Long chatCount) {
         this.chatCount = chatCount;
     }
 

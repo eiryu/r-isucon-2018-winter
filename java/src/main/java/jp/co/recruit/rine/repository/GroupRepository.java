@@ -9,12 +9,13 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Repository
 public class GroupRepository {
@@ -41,6 +42,15 @@ public class GroupRepository {
         } catch (EmptyResultDataAccessException e) {
             return null;
         }
+    }
+
+    public List<Group> findByIds(Collection<Integer> groupIds) {
+        if (groupIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        SqlParameterSource source = new MapSqlParameterSource().addValue("groupIds", groupIds);
+        String sql = "SELECT * FROM `groups` WHERE id in (:groupIds)";
+        return jdbcTemplate.query(sql, source, rowMapper);
     }
 
     public Group findByNameAndOwner(String name, String owner) {
@@ -77,14 +87,19 @@ public class GroupRepository {
     }
 
     public List<Group> getGroupsByUser(User user) {
+        // ユーザーが紐付いているグループの人数を返す
+
+        // ユーザーの所属するグループを取得
         List<BelongsUserGroup> userGroups = belongsUserGroupRepository.getBelongsUserGroups(user);
-        List<Group> groups = new ArrayList<>();
-        for (BelongsUserGroup g: userGroups) {
-            Group group = findById(g.getGroupId());
-            group.setUserCount(belongsUserGroupRepository.countUsers(group));
-            group.setChatCount(belongsChatGroupRepository.countChats(group));
-            groups.add(group);
-        }
-        return groups;
+        Map<Integer, Long> belongsUserGroupLongMap = belongsUserGroupRepository.countUsersByGroups(userGroups);
+        Map<Integer, Long> belongsChatGroupLongMap = belongsChatGroupRepository.countChatsByGroups(userGroups);
+
+        return findByIds(userGroups.stream().map(BelongsUserGroup::getGroupId).collect(Collectors.toList())).stream()
+                .map(g -> {
+                    g.setUserCount(belongsUserGroupLongMap.computeIfAbsent(g.getId(), (key) -> 0L));
+                    g.setChatCount(belongsChatGroupLongMap.computeIfAbsent(g.getId(), (key) -> 0L));
+                    return g;
+                })
+                .collect(Collectors.toList());
     }
 }
